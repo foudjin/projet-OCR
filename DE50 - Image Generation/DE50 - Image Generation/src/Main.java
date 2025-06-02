@@ -8,9 +8,9 @@ public class Main {
     }
 
     public static void createGUI() {
-        JFrame frame = new JFrame("DE50 - Project OCR");
+        JFrame frame = new JFrame("DE50 - Data Generation");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(450, 320);
+        frame.setSize(500, 400);
         frame.setLocationRelativeTo(null);
 
         JPanel panel = new JPanel(new GridBagLayout());
@@ -19,10 +19,10 @@ public class Main {
         gbc.insets = new Insets(8, 8, 8, 8);
         gbc.anchor = GridBagConstraints.WEST;
 
-        //Language
+        // Langue (désactivée)
         gbc.gridx = 0;
         gbc.gridy = 0;
-        panel.add(new JLabel("Second language(unavailable yet) :"), gbc);
+        panel.add(new JLabel("Second language (unavailable yet):"), gbc);
 
         JRadioButton frButton = new JRadioButton("Français");
         JRadioButton enButton = new JRadioButton("English");
@@ -42,34 +42,47 @@ public class Main {
         gbc.gridx = 1;
         panel.add(langPanel, gbc);
 
-        //drop-down choices
-        Integer[] docOptions = IntStream.rangeClosed(1, 20).boxed().toArray(Integer[]::new);
+        // Champs personnalisés
         Integer[] paraOptions = IntStream.rangeClosed(1, 10).boxed().toArray(Integer[]::new);
+        Integer[] charOptions = IntStream.rangeClosed(100, 1000).filter(n -> n % 50 == 0).boxed().toArray(Integer[]::new);
 
+        // Nombre de documents (champ de texte)
         gbc.gridx = 0;
         gbc.gridy = 1;
-        panel.add(new JLabel("Number of documents :"), gbc);
-        JComboBox<Integer> docBox = new JComboBox<>(docOptions);
+        panel.add(new JLabel("Number of documents:"), gbc);
+        JTextField docField = new JTextField("5", 5);
         gbc.gridx = 1;
-        panel.add(docBox, gbc);
+        panel.add(docField, gbc);
 
+        // Paragraphes min / max
         gbc.gridx = 0;
         gbc.gridy = 2;
-        panel.add(new JLabel("Minimum paragraphes :"), gbc);
-        JComboBox<Integer> minBox = new JComboBox<>(paraOptions);
-        minBox.setSelectedItem(3);
+        panel.add(new JLabel("Paragraphs (min / max):"), gbc);
+        JPanel paraPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JComboBox<Integer> minParaBox = new JComboBox<>(paraOptions);
+        JComboBox<Integer> maxParaBox = new JComboBox<>(paraOptions);
+        minParaBox.setSelectedItem(3);
+        maxParaBox.setSelectedItem(6);
+        paraPanel.add(minParaBox);
+        paraPanel.add(maxParaBox);
         gbc.gridx = 1;
-        panel.add(minBox, gbc);
+        panel.add(paraPanel, gbc);
 
+        // Caractères min / max
         gbc.gridx = 0;
         gbc.gridy = 3;
-        panel.add(new JLabel("Maximum paragraphes :"), gbc);
-        JComboBox<Integer> maxBox = new JComboBox<>(paraOptions);
-        maxBox.setSelectedItem(6);
+        panel.add(new JLabel("Chars per paragraph (min / max):"), gbc);
+        JPanel charPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JComboBox<Integer> minCharBox = new JComboBox<>(charOptions);
+        JComboBox<Integer> maxCharBox = new JComboBox<>(charOptions);
+        minCharBox.setSelectedItem(300);
+        maxCharBox.setSelectedItem(600);
+        charPanel.add(minCharBox);
+        charPanel.add(maxCharBox);
         gbc.gridx = 1;
-        panel.add(maxBox, gbc);
+        panel.add(charPanel, gbc);
 
-        //validate and progress
+        // Bouton + barre de progression
         gbc.gridx = 0;
         gbc.gridy = 4;
         gbc.gridwidth = 2;
@@ -87,27 +100,40 @@ public class Main {
         frame.add(panel);
         frame.setVisible(true);
 
-        //Action bouton
         generateButton.addActionListener(e -> {
-            int docCount = (Integer) docBox.getSelectedItem();
-            int minP = (Integer) minBox.getSelectedItem();
-            int maxP = (Integer) maxBox.getSelectedItem();
+            String docText = docField.getText().trim();
+            int docCount;
+            try {
+                docCount = Integer.parseInt(docText);
+                if (docCount <= 0) throw new NumberFormatException();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(frame, "Enter a valid number of documents.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-            if (minP > maxP) {
-                JOptionPane.showMessageDialog(frame, "Minimum should be inferior or equal to maximum.", "Error", JOptionPane.ERROR_MESSAGE);
+            int minP = (Integer) minParaBox.getSelectedItem();
+            int maxP = (Integer) maxParaBox.getSelectedItem();
+            int minC = (Integer) minCharBox.getSelectedItem();
+            int maxC = (Integer) maxCharBox.getSelectedItem();
+
+            if (minP > maxP || minC > maxC) {
+                JOptionPane.showMessageDialog(frame, "Minimum must be <= maximum.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             generateButton.setEnabled(false);
             progressBar.setValue(0);
+            String outputDir = "Generation";
 
             SwingWorker<Void, Integer> worker = new SwingWorker<>() {
                 @Override
                 protected Void doInBackground() {
                     for (int i = 1; i <= docCount; i++) {
                         int actualParagraphCount = minP + (int) (Math.random() * (maxP - minP + 1));
-                        TextGenerator generator = new TextGenerator(actualParagraphCount);
-                        generator.saveAsImage("images", "document_" + i + ".jpg");
+                        int actualCharCount = minC + (int) (Math.random() * (maxC - minC + 1));
+                        TextGenerator generator = new TextGenerator(actualParagraphCount, actualCharCount);
+                        generator.saveAsImage(outputDir, "document_" + i + ".jpg");
+                        generator.saveAsHtml(outputDir, "document_" + i + ".html");
                         setProgress((int) ((i / (float) docCount) * 100));
                     }
                     return null;
@@ -117,7 +143,7 @@ public class Main {
                 protected void done() {
                     setProgress(100);
                     generateButton.setEnabled(true);
-                    JOptionPane.showMessageDialog(frame, docCount + " documents generated !");
+                    JOptionPane.showMessageDialog(frame, docCount + " documents generated in '" + outputDir + "' !");
                 }
             };
 

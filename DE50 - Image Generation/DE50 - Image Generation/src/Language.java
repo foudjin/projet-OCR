@@ -1,34 +1,40 @@
+import com.github.javafaker.Faker;
+import java.util.Locale;
 import java.util.Random;
 
 public class Language {
-    public String generateArabicText(int paragraphCount) {
-        String[] words = {
-                "كتاب", "مدرسة", "مدينة", "مكتب", "جامعة", "شاشة", "لوحة", "قلم", "هاتف", "كمبيوتر",
-                "برنامج", "معلومات", "بيانات", "تكنولوجيا", "شبكة", "حاسوب", "ذاكرة", "إنترنت", "كود"
-        };
+    private final Faker faker = new Faker(new Locale("fr"));
+    private final Random rand = new Random();
 
-        String[] titles = {
-                "## التعليم والتكنولوجيا ##",
-                "## أهمية القراءة ##",
-                "## تأثير الإنترنت ##",
-                "## تطور البرمجيات ##",
-                "## الذكاء الاصطناعي ##"
-        };
 
-        Random rand = new Random();
-        StringBuilder sb = new StringBuilder();
+    public String generateFrenchText(int nbParagraphs, int charPerParagraph) {
+        StringBuilder fullText = new StringBuilder();
 
-        for (int i = 0; i < paragraphCount; i++) {
-            // Titre pour chaque paragraphe
-            sb.append(titles[rand.nextInt(titles.length)]).append("\n\n");
+        for (int i = 0; i < nbParagraphs; i++) {
+            // Titre en rouge foncé encadré par ##
+            String title = faker.book().title();
+            fullText.append("## ").append(title).append(" ##\n\n");
 
-            int wordCount = rand.nextInt(30) + 20;
-            for (int j = 0; j < wordCount; j++) {
-                sb.append(words[rand.nextInt(words.length)]).append(" ");
+            StringBuilder paragraph = new StringBuilder();
+            while (paragraph.length() < charPerParagraph) {
+                String sentence = faker.book().title() + ". ";
+                paragraph.append(sentence);
             }
-            sb.append("\n\n");
+
+            // Tronque si ça dépasse la taille max
+            String truncated = paragraph.substring(0, Math.min(paragraph.length(), charPerParagraph)).trim();
+            fullText.append(truncated).append("\n\n");
         }
 
-        return sb.toString().trim();
+        return fullText.toString().trim();
+    }
+
+
+    public String generateFrenchText(int paragraphCount) {
+        return generateFrenchText(paragraphCount, 400); // valeur par défaut
+    }
+
+    public String generateArabicText(int paragraphCount) {
+        return generateFrenchText(paragraphCount);
     }
 }

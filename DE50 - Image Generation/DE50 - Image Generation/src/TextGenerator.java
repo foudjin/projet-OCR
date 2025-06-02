@@ -2,6 +2,8 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Random;
 import javax.imageio.ImageIO;
 
@@ -11,21 +13,21 @@ public class TextGenerator {
     private final ImageConfig config;
     private final Alteration alteration = new Alteration();
 
-    public TextGenerator(int paragraphCount) {
+    public TextGenerator(int paragraphCount, int sentenceCount) {
         // Générer le texte
         Language lang = new Language();
-        this.text = lang.generateArabicText(paragraphCount);
+        this.text = lang.generateFrenchText(paragraphCount, sentenceCount);
 
-        // Initialiser les configs
+        // Configuration de l'image
         this.config = new ImageConfig();
 
-        // Charger la police
+        // Chargement d'une police aléatoire
         TextStyle style = new TextStyle();
-        this.textFont = style.loadRandomFont("fonts/");
+        this.textFont = style.loadRandomFont("fonts/latin");
     }
 
-    public TextGenerator() {
-        this(3); // par défaut 3 paragraphes
+    public TextGenerator(int paragraphCount) {
+        this(paragraphCount, 4); // par défaut : 4 phrases
     }
 
     public void saveAsImage(String directory, String fileName) {
@@ -47,10 +49,40 @@ public class TextGenerator {
         g2d.dispose();
 
         try {
-            File outputFile = new File(directory + File.separator + fileName);
+            File outputFile = new File(directory, fileName);
             ImageIO.write(image, "jpg", outputFile);
-            System.out.println("Image sauvegardée : " + outputFile.getAbsolutePath());
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveAsHtml(String directory, String fileName) {
+        File dir = new File(directory);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n")
+                .append("<meta charset=\"UTF-8\">\n")
+                .append("<title>").append(fileName).append("</title>\n")
+                .append("</head>\n<body style='font-family: sans-serif;'>\n");
+
+        String[] blocks = text.split("\n\n");
+        for (String block : blocks) {
+            if (block.startsWith("##") && block.endsWith("##")) {
+                String title = block.replace("##", "").trim();
+                html.append("<h2>").append(title).append("</h2>\n");
+            } else {
+                html.append("<p>").append(block.trim()).append("</p>\n");
+            }
+        }
+
+        html.append("</body>\n</html>");
+
+        try (FileWriter writer = new FileWriter(new File(dir, fileName))) {
+            writer.write(html.toString());
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -58,7 +90,6 @@ public class TextGenerator {
     private void drawStructuredText(Graphics2D g2d) {
         float normalSize = 48f;
         float titleSize = 80f;
-
         boolean fits = false;
 
         while (!fits && normalSize > 6f) {
@@ -121,7 +152,6 @@ public class TextGenerator {
             }
 
             if (!fits) {
-                // Effacer le dessin et réessayer avec une police plus petite
                 g2d.setTransform(AffineTransform.getRotateInstance(config.rotationAngle, config.width / 2, config.height / 2));
                 g2d.setColor(config.backgroundColor);
                 g2d.fillRect(0, 0, config.width, config.height);
