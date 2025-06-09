@@ -1,34 +1,49 @@
+import com.github.javafaker.Faker;
+import java.util.Locale;
 import java.util.Random;
 
 public class Language {
-    public String generateArabicText(int paragraphCount) {
-        String[] words = {
-                "كتاب", "مدرسة", "مدينة", "مكتب", "جامعة", "شاشة", "لوحة", "قلم", "هاتف", "كمبيوتر",
-                "برنامج", "معلومات", "بيانات", "تكنولوجيا", "شبكة", "حاسوب", "ذاكرة", "إنترنت", "كود"
-        };
 
-        String[] titles = {
-                "## التعليم والتكنولوجيا ##",
-                "## أهمية القراءة ##",
-                "## تأثير الإنترنت ##",
-                "## تطور البرمجيات ##"
-        };
+    // Faker instance (API who generate the text) with French locale
+    private final Faker faker = new Faker(new Locale("fr"));
+    private final Random rand = new Random();
 
-        Random rand = new Random();
-        StringBuilder sb = new StringBuilder();
+    /**
+     * Generates multiple French paragraphs with a title and a fixed number of characters per paragraph
+     * @param nbParagraphs number of paragraphs to generate
+     * @param charPerParagraph number of characters per paragraph
+     * @return a structured French text with titles and paragraphs
+     */
+    public String generateFrenchText(int nbParagraphs, int charPerParagraph) {
+        StringBuilder fullText = new StringBuilder();
 
-        for (int i = 0; i < paragraphCount; i++) {
-            if (i % 2 == 0) {
-                sb.append(titles[rand.nextInt(titles.length)]).append("\n\n");
+        for (int i = 0; i < nbParagraphs; i++) {
+            // Generate a fake book title for the paragraph title
+            String title = faker.book().title();
+            fullText.append("## ").append(title).append(" ##\n\n");
+
+            // Build paragraph until the required character count is reached
+            StringBuilder paragraph = new StringBuilder();
+            while (paragraph.length() < charPerParagraph) {
+                String sentence = faker.book().title() + ". ";
+                paragraph.append(sentence);
             }
 
-            int wordCount = rand.nextInt(30) + 20;
-            for (int j = 0; j < wordCount; j++) {
-                sb.append(words[rand.nextInt(words.length)]).append(" ");
-            }
-            sb.append("\n\n");
+            // Trim paragraph to the exact size if it exceeds the limit
+            String truncated = paragraph.substring(0, Math.min(paragraph.length(), charPerParagraph)).trim();
+            fullText.append(truncated).append("\n\n");
         }
 
-        return sb.toString().trim();
+        return fullText.toString().trim();
+    }
+
+    // Overloaded method with default paragraph length (400 characters)
+    public String generateFrenchText(int paragraphCount) {
+        return generateFrenchText(paragraphCount, 400);
+    }
+
+    // Placeholder method for Arabic text generation (currently returns French text)
+    public String generateArabicText(int paragraphCount) {
+        return generateFrenchText(paragraphCount);
     }
 }

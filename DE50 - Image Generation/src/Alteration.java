@@ -5,11 +5,15 @@ import java.io.File;
 import java.util.Random;
 
 public class Alteration {
+
+    // List of texture background images (must be stored in /textures/)
     private final String[] textureFiles = {
-            "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg", "6.jpg", "7.jpg", "8.jpg", "9.jpg",
-            "10.jpg", "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"
+            "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg",
+            "6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg",
+            "11.jpg", "12.jpg", "13.jpg", "14.jpg", "15.jpg"
     };
 
+    // Apply a semi-transparent texture over the background
     public void applyTexture(Graphics2D g2d, int width, int height) {
         try {
             Random rand = new Random();
@@ -22,6 +26,7 @@ public class Alteration {
         }
     }
 
+    //Add random black ink spots to simulate pen leakage or dirt
     public void applyInkEffect(Graphics2D g2d, int width, int height) {
         Random rand = new Random();
         for (int i = 0; i < width; i += rand.nextInt(200) + 50) {
@@ -33,6 +38,7 @@ public class Alteration {
         }
     }
 
+    // Draw the text with a wavy baseline to simulate handwriting
     public void drawWavyText(Graphics2D g2d, String text, int x, int baseY, double frequency, int amplitude) {
         FontMetrics metrics = g2d.getFontMetrics();
         int currentX = x;
@@ -40,8 +46,13 @@ public class Alteration {
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             int charWidth = metrics.charWidth(c);
-            int yOffset = (int) (Math.sin((currentX + i * 10) * frequency) * amplitude);
+
+            // Calculate vertical offset using sine wave
+            int yOffset = (int) (Math.sin((currentX + i) * frequency) * amplitude);
+
+            // Draw character with vertical distortion
             g2d.drawString(String.valueOf(c), currentX, baseY + yOffset);
+
             currentX += charWidth;
         }
     }
